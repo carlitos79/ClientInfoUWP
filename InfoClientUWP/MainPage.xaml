@@ -1,0 +1,26 @@
+﻿<Page
+    x:Class="InfoClientUWP.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:InfoClientUWP"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Maps="using:Windows.UI.Xaml.Controls.Maps"
+    mc:Ignorable="d">
+
+    <Grid x:Name="pageGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <Maps:MapControl
+       x:Name="MapControl1"            
+       ZoomInteractionMode="GestureAndControl"
+       TiltInteractionMode="GestureAndControl"   
+       MapServiceToken="1RlRSrgMGBzsDVkkxXv5~oKwIyEm1kdA2yi_Dg-yRLg~AsG9Rug_1PMvO5YvxMp5tGUgUBOe8n2u9r_A4GwmmnpTTwrhW0Dzj_rr00xrLCCr"/>
+
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Show Boras" Click="ShowBoras" HorizontalAlignment="Right" Margin="100,550,5,5"/>
+            <Button Content="Show Route" Click="ShowWayPointsAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
+            <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
+        </StackPanel>
+
+    </Grid>
+</Page>
