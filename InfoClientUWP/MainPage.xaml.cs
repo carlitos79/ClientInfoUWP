@@ -10,6 +10,7 @@ using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Maps;
+using Windows.System.Threading;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -25,6 +26,7 @@ namespace InfoClientUWP
             this.InitializeComponent();
         }
 
+        private ThreadPoolTimer timer = null;
         private double BorasLat = 57.72103500;
         private double BorasLong = 12.93981900;
 
@@ -33,6 +35,79 @@ namespace InfoClientUWP
 
         private double JonkopingLat = 57.78145;
         private double JonkopingLong = 14.15618;
+
+        private async void UpdatePosition()
+        {
+            var accesStatus = await Geolocator.RequestAccessAsync();
+
+            switch (accesStatus)
+            {
+                case GeolocationAccessStatus.Allowed:
+
+                    Geolocator geolocator = new Geolocator();
+                    Geoposition position = await geolocator.GetGeopositionAsync();
+                    Geopoint thisLocation = position.Coordinate.Point;
+
+                    double lat = thisLocation.Position.Latitude;
+                    double lon = thisLocation.Position.Longitude;
+
+                    AddMarkerUserPos(thisLocation, lat.ToString() + " " + lon.ToString());
+
+                    MapControl1.Center = thisLocation;
+                    MapControl1.ZoomLevel = 17;
+                    MapControl1.LandmarksVisible = true;
+
+                    // COMMUNICATION TEST
+
+                    Converters converter = new Converters();
+
+                    CheckpointsClient checkPoint = new CheckpointsClient
+                    {
+                        RouteID = 1,
+                        Latitude = converter.FromDoubleToString(lat),
+                        Longitude = converter.FromDoubleToString(lon),
+                        CPDateTime = DateTime.Now
+                    };
+
+                    RequestHandler handler = new RequestHandler();
+                    await handler.PostDataToAPI(checkPoint);
+
+                    // END OF TEST
+
+                    break;
+
+                case GeolocationAccessStatus.Denied:
+                    break;
+
+                case GeolocationAccessStatus.Unspecified:
+                    break;
+            }
+        }
+
+        private async void OnTimedEvent(ThreadPoolTimer timer)
+        {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
+                UpdatePosition();
+            }); 
+        }
+
+        private void ShowLiveRoute(object sender, RoutedEventArgs e)
+        {
+            if (timer == null)
+            {
+                LiveButton.Content = "Stop Tracking";
+                timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(5));
+                System.Diagnostics.Debug.WriteLine("starting timer");
+            }
+
+            else
+            {
+                LiveButton.Content = "Start Tracking";
+                timer.Cancel();
+                timer = null;
+                System.Diagnostics.Debug.WriteLine("stopping timer");
+            }
+        }
 
         private void ShowBoras(object sender, RoutedEventArgs e)
         {            

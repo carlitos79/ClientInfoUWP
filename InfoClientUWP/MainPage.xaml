@@ -20,6 +20,7 @@
             <Button Content="Show Boras" Click="ShowBoras" HorizontalAlignment="Right" Margin="100,550,5,5"/>
             <Button Content="Show Route" Click="ShowWayPointsAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
             <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
+            <Button Name="LiveButton" Content="Start Tracking" Click="ShowLiveRoute" HorizontalAlignment="Right" Margin="150,550,5,5"/>
         </StackPanel>
 
     </Grid>
