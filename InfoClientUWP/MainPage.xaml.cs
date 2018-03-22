@@ -1,4 +1,7 @@
-﻿using System;
+﻿using InfoClientUWP.Helpers;
+using InfoClientUWP.Model;
+using InfoClientUWP.Services;
+using System;
 using System.Collections.Generic;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
@@ -160,6 +163,24 @@ namespace InfoClientUWP
                     MapControl1.Center = thisLocation;
                     MapControl1.ZoomLevel = 17;
                     MapControl1.LandmarksVisible = true;
+
+                    // COMMUNICATION TEST
+
+                    Converters converter = new Converters();
+
+                    CheckpointsClient checkPoint = new CheckpointsClient
+                    {
+                        RouteID = 1,
+                        Latitude = converter.FromDoubleToString(lat),
+                        Longitude = converter.FromDoubleToString(lon),
+                        CPDateTime = DateTime.Now
+                    };
+
+                    RequestHandler handler = new RequestHandler();
+                    await handler.PostDataToAPI(checkPoint);
+
+                    // END OF TEST
+
                     break;
 
                 case GeolocationAccessStatus.Denied:
