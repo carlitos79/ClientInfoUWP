@@ -8,20 +8,33 @@
     xmlns:Maps="using:Windows.UI.Xaml.Controls.Maps"
     mc:Ignorable="d">
 
-    <Grid x:Name="pageGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4.5*"/>
+            <ColumnDefinition Width="7*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Background="LightGray"/>
+        <Border Grid.Column ="1"/>
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="AliceBlue"/>
 
         <Maps:MapControl
-       x:Name="MapControl1"            
-       ZoomInteractionMode="GestureAndControl"
-       TiltInteractionMode="GestureAndControl"   
-       MapServiceToken="1RlRSrgMGBzsDVkkxXv5~oKwIyEm1kdA2yi_Dg-yRLg~AsG9Rug_1PMvO5YvxMp5tGUgUBOe8n2u9r_A4GwmmnpTTwrhW0Dzj_rr00xrLCCr"/>
+            Grid.Column="1" Margin="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+            x:Name="MapControl1"            
+            ZoomInteractionMode="GestureAndControl"
+            TiltInteractionMode="GestureAndControl"   
+            MapServiceToken="1RlRSrgMGBzsDVkkxXv5~oKwIyEm1kdA2yi_Dg-yRLg~AsG9Rug_1PMvO5YvxMp5tGUgUBOe8n2u9r_A4GwmmnpTTwrhW0Dzj_rr00xrLCCr"/>
 
-        <StackPanel Orientation="Horizontal">
-            <Button Content="Show Boras" Click="ShowBoras" HorizontalAlignment="Right" Margin="100,550,5,5"/>
-            <Button Content="Show Route" Click="ShowWayPointsAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
-            <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="150,550,5,5"/>
-            <Button Name="LiveButton" Content="Start Tracking" Click="ShowLiveRoute" HorizontalAlignment="Right" Margin="150,550,5,5"/>
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Button Content="Show Route" Click="ShowWayPointsAsync" HorizontalAlignment="Right" Margin="10,0,20,0"/>
+            <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="10,0,20,0"/>
+            <Button x:Name="LiveButton" Content="Start Tracking" Click="ShowLiveRoute" HorizontalAlignment="Right" Margin="10,0,20,0"/>
         </StackPanel>
-
+        <CalendarView x:Name="previousRoutes" Height="250" Width="300"  Margin="5,0,0,235"/>
+        <TextBlock x:Name="InfoTextBlock" Text="Some Info" FontSize="40" Margin="50,330,0,0"/>
     </Grid>
 </Page>

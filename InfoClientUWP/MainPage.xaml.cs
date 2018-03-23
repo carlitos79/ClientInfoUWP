@@ -27,6 +27,10 @@ namespace InfoClientUWP
         }
 
         private ThreadPoolTimer timer = null;
+        private DateTime dateTime = DateTime.Now;
+        private Guid routeId = Guid.NewGuid();
+        private TimeUtils timeUtility = new TimeUtils();
+
         private double BorasLat = 57.72103500;
         private double BorasLong = 12.93981900;
 
@@ -51,28 +55,24 @@ namespace InfoClientUWP
                     double lat = thisLocation.Position.Latitude;
                     double lon = thisLocation.Position.Longitude;
 
-                    AddMarkerUserPos(thisLocation, lat.ToString() + " " + lon.ToString());
+                    AddMarkerUserPos(thisLocation, timeUtility.GetTime(dateTime));
 
                     MapControl1.Center = thisLocation;
                     MapControl1.ZoomLevel = 17;
                     MapControl1.LandmarksVisible = true;
 
-                    // COMMUNICATION TEST
-
                     Converters converter = new Converters();
 
                     CheckpointsClient checkPoint = new CheckpointsClient
                     {
-                        RouteID = 1,
+                        RouteID = routeId.ToString(),
                         Latitude = converter.FromDoubleToString(lat),
                         Longitude = converter.FromDoubleToString(lon),
-                        CPDateTime = DateTime.Now
+                        CPDateTime = dateTime
                     };
 
                     RequestHandler handler = new RequestHandler();
                     await handler.PostDataToAPI(checkPoint);
-
-                    // END OF TEST
 
                     break;
 
@@ -96,10 +96,9 @@ namespace InfoClientUWP
             if (timer == null)
             {
                 LiveButton.Content = "Stop Tracking";
-                timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(5));
+                timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(15));
                 System.Diagnostics.Debug.WriteLine("starting timer");
             }
-
             else
             {
                 LiveButton.Content = "Start Tracking";
@@ -107,26 +106,6 @@ namespace InfoClientUWP
                 timer = null;
                 System.Diagnostics.Debug.WriteLine("stopping timer");
             }
-        }
-
-        private void ShowBoras(object sender, RoutedEventArgs e)
-        {            
-            BasicGeoposition boras = new BasicGeoposition() { Latitude = BorasLat, Longitude = BorasLong };
-            Geopoint cityCenter = new Geopoint(boras);
-
-            MapControl1.Center = cityCenter;
-            MapControl1.ZoomLevel = 10;
-            MapControl1.LandmarksVisible = true;
-        }
-
-        private void ShowUlricehamn(object sender, RoutedEventArgs e)
-        {
-            BasicGeoposition ulricehamn = new BasicGeoposition() { Latitude = UlricehamnLat, Longitude = UlricehamnLong };
-            Geopoint cityCenter = new Geopoint(ulricehamn);
-
-            MapControl1.Center = cityCenter;
-            MapControl1.ZoomLevel = 10;
-            MapControl1.LandmarksVisible = true;
         }
 
         private async void ShowRouteStartEndAsync(object sender, RoutedEventArgs e)
@@ -239,13 +218,11 @@ namespace InfoClientUWP
                     MapControl1.ZoomLevel = 17;
                     MapControl1.LandmarksVisible = true;
 
-                    // COMMUNICATION TEST
-
                     Converters converter = new Converters();
 
                     CheckpointsClient checkPoint = new CheckpointsClient
                     {
-                        RouteID = 1,
+                        RouteID = routeId.ToString(),
                         Latitude = converter.FromDoubleToString(lat),
                         Longitude = converter.FromDoubleToString(lon),
                         CPDateTime = DateTime.Now
@@ -253,8 +230,6 @@ namespace InfoClientUWP
 
                     RequestHandler handler = new RequestHandler();
                     await handler.PostDataToAPI(checkPoint);
-
-                    // END OF TEST
 
                     break;
 
