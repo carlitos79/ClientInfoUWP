@@ -3,14 +3,17 @@ using InfoClientUWP.Model;
 using InfoClientUWP.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
+using Windows.System.Threading;
 using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Maps;
-using Windows.System.Threading;
+using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -24,21 +27,44 @@ namespace InfoClientUWP
         public MainPage()
         {
             this.InitializeComponent();
+            GetCheckpoints();
         }
 
         private ThreadPoolTimer timer = null;
-        private DateTime dateTime = DateTime.Now;
         private Guid routeId = Guid.NewGuid();
         private TimeUtils timeUtility = new TimeUtils();
+        private Converters converter = new Converters();
+        private List<Geopoint> path = new List<Geopoint>();
+        private List<CheckpointsClient> checkpointsList = new List<CheckpointsClient>();
+        private CalendarViewDayItem date;
 
-        private double BorasLat = 57.72103500;
-        private double BorasLong = 12.93981900;
+        private async void ShowPath()
+        {
+            if (path.Count >= 2)
+            {
+                foreach (var geoPoint in path)
+                {
+                    AddMarkerUserPos(geoPoint, timeUtility.GetTime(DateTime.Now));
+                }
 
-        private double UlricehamnLat = 57.79159;
-        private double UlricehamnLong = 13.41422;
+                MapRouteFinderResult routeResult = await MapRouteFinder.GetWalkingRouteFromWaypointsAsync(path);
 
-        private double JonkopingLat = 57.78145;
-        private double JonkopingLong = 14.15618;
+                if (routeResult.Status == MapRouteFinderStatus.Success)
+                {
+                    MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
+                    viewOfRoute.RouteColor = Colors.Yellow;
+                    viewOfRoute.OutlineColor = Colors.Black;                    
+
+                    MapControl1.Routes.Add(viewOfRoute);
+                    MapControl1.ZoomLevel = 7;
+
+                    await MapControl1.TrySetViewBoundsAsync(
+                          routeResult.Route.BoundingBox,
+                          null,
+                          Windows.UI.Xaml.Controls.Maps.MapAnimationKind.None);
+                }
+            }           
+        }
 
         private async void UpdatePosition()
         {
@@ -52,14 +78,12 @@ namespace InfoClientUWP
                     Geoposition position = await geolocator.GetGeopositionAsync();
                     Geopoint thisLocation = position.Coordinate.Point;
 
+                    path.Add(thisLocation);
+
                     double lat = thisLocation.Position.Latitude;
                     double lon = thisLocation.Position.Longitude;
 
-                    AddMarkerUserPos(thisLocation, timeUtility.GetTime(dateTime));
-
-                    MapControl1.Center = thisLocation;
-                    MapControl1.ZoomLevel = 17;
-                    MapControl1.LandmarksVisible = true;
+                    ShowPath();
 
                     Converters converter = new Converters();
 
@@ -68,7 +92,7 @@ namespace InfoClientUWP
                         RouteID = routeId.ToString(),
                         Latitude = converter.FromDoubleToString(lat),
                         Longitude = converter.FromDoubleToString(lon),
-                        CPDateTime = dateTime
+                        CPDateTime = DateTime.Now
                     };
 
                     RequestHandler handler = new RequestHandler();
@@ -108,36 +132,10 @@ namespace InfoClientUWP
             }
         }
 
-        private async void ShowRouteStartEndAsync(object sender, RoutedEventArgs e)
-        {
-            BasicGeoposition startLocation = new BasicGeoposition() { Latitude = JonkopingLat, Longitude = JonkopingLong };
-            BasicGeoposition endLocation = new BasicGeoposition() { Latitude = BorasLat, Longitude = BorasLong };
-
-            MapRouteFinderResult routeResult =
-                  await MapRouteFinder.GetDrivingRouteAsync(
-                  new Geopoint(startLocation),
-                  new Geopoint(endLocation),
-                  MapRouteOptimization.Time,
-                  MapRouteRestrictions.None);
-
-            if (routeResult.Status == MapRouteFinderStatus.Success)
-            {
-                MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
-                viewOfRoute.RouteColor = Colors.Yellow;
-                viewOfRoute.OutlineColor = Colors.Black;
-
-                MapControl1.Routes.Add(viewOfRoute);
-
-                await MapControl1.TrySetViewBoundsAsync(
-                      routeResult.Route.BoundingBox,
-                      null,
-                      Windows.UI.Xaml.Controls.Maps.MapAnimationKind.None);
-            }
-        }
-
         public void AddMarker(BasicGeoposition pos, string text)
         {
             Geopoint geoForPos = new Geopoint(pos);
+
             MapIcon pin = new MapIcon
             {
                 Location = geoForPos,
@@ -161,29 +159,38 @@ namespace InfoClientUWP
             MapControl1.MapElements.Add(pin);
         }
 
-        private async void ShowWayPointsAsync(object sender, RoutedEventArgs e)
+        private async void ShowWayPointsAsync(object sender, ItemClickEventArgs e)
         {
+            var route = (RouteClient)e.ClickedItem;            
+
             Geolocator locator = new Geolocator();
             locator.DesiredAccuracyInMeters = 1;
 
-            BasicGeoposition point1 = new BasicGeoposition() { Latitude = JonkopingLat, Longitude = JonkopingLong };
-            BasicGeoposition point2 = new BasicGeoposition() { Latitude = UlricehamnLat, Longitude = UlricehamnLong };
-            BasicGeoposition point3 = new BasicGeoposition() { Latitude = BorasLat, Longitude = BorasLong };
+            BasicGeoposition point;
+            var path2 = new List<Geopoint>();
 
-            AddMarker(point1, "0.016 m/s" + "\n" + "10:10 A.M.");
-            AddMarker(point2, "Speed: 0.016 m/s" + "\n" + "Time: 13:20 P.M.");
-            AddMarker(point3, "0.016 m/s" + "\n" + "15:30 P.M.");
+            var newRoute = new RouteClient()
+            {
+                RouteID = route.RouteID,
+                Route = route.Route
+            };
 
-            var path = new List<EnhancedWaypoint>();
+            foreach (var checkpoint in newRoute.Route)
+            {
+                point = new BasicGeoposition() { Latitude = converter.FromStringToDouble(checkpoint.Latitude), Longitude = converter.FromStringToDouble(checkpoint.Longitude) };
+                AddMarker(point, timeUtility.GetDate(checkpoint.CPDateTime) + "\n" + "speed: 0.016 m/s");
+                path2.Add(new Geopoint(point));
+            }  
 
-            path.Add(new EnhancedWaypoint(new Geopoint(point1), WaypointKind.Stop)); //WaypointKind.Stop = 0
-            path.Add(new EnhancedWaypoint(new Geopoint(point2), WaypointKind.Via));  //WaypointKind.Via = 1
-            path.Add(new EnhancedWaypoint(new Geopoint(point3), WaypointKind.Stop));
-
-            MapRouteFinderResult routeResult = await MapRouteFinder.GetDrivingRouteFromEnhancedWaypointsAsync(path);
+            MapRouteFinderResult routeResult = await MapRouteFinder.GetWalkingRouteFromWaypointsAsync(path2);
 
             if (routeResult.Status == MapRouteFinderStatus.Success)
             {
+                if (PopupRouteInfo.IsOpen)
+                {
+                    PopupRouteInfo.IsOpen = false;
+                }
+
                 MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
                 viewOfRoute.RouteColor = Colors.Yellow;
                 viewOfRoute.OutlineColor = Colors.Black;
@@ -238,6 +245,120 @@ namespace InfoClientUWP
 
                 case GeolocationAccessStatus.Unspecified:
                     break;
+            }
+        }
+
+        private async void GetCheckpoints()
+        {
+            RequestHandler handler = new RequestHandler();
+            IEnumerable<CheckpointsClient> checkpoints = await handler.GetDataFromAPI<CheckpointsClient>("Checkpoints");
+
+            List<CheckpointsClient> tempCheckpointsList = new List<CheckpointsClient>();
+
+            foreach (var checkpoint in checkpoints)
+            {
+                tempCheckpointsList.Add(checkpoint);
+            }
+
+            foreach (var checkpoint in tempCheckpointsList)
+            {
+                if (!checkpointsList.Contains(checkpoint))
+                {
+                    checkpointsList.Add(checkpoint);
+                }
+            }
+        }
+
+        private void UpdateCalendarView(object sender, PointerRoutedEventArgs e)
+        {
+            SolidColorBrush greenBackground = new SolidColorBrush(Windows.UI.Colors.LightGreen);
+
+            date = sender as CalendarViewDayItem;
+
+            foreach (var checkpoint in checkpointsList)
+            {
+                string rightFormat = converter.SetStringRightFormat(checkpoint.CPDateTime);
+                DateTime dateTime = DateTime.ParseExact(rightFormat, "MM-dd-yyyy", CultureInfo.InvariantCulture);
+                DateTime checkDate = dateTime;
+
+                if ((sender as CalendarViewDayItem).Date.Date.Equals(checkDate))
+                {
+                    (sender as CalendarViewDayItem).Background = greenBackground;
+                    (sender as CalendarViewDayItem).BorderThickness = new Thickness(1);
+                    (sender as CalendarViewDayItem).PointerPressed += OpenPopupRouteList;
+                }
+            }
+        }
+
+        private void CalendarViewPreviousRouteInfo(CalendarView sender, CalendarViewDayItemChangingEventArgs args)
+        {
+            InfoTextBlock.Text = "Dates highlighted in green represent" + "\n" + "previous routes." + "\n" +
+                                 "Press on the highlighted date to see" + "\n" + "the route(s) for that date.";
+
+            date = args.Item;
+
+            SolidColorBrush greenBackground = new SolidColorBrush(Windows.UI.Colors.LightGreen);
+
+            if (args.Phase == 0)
+            {
+                args.RegisterUpdateCallback(CalendarViewPreviousRouteInfo);
+            }
+
+            //else if (args.Phase > 0)
+            //{
+            //    foreach (var checkpoint in checkpointsList)
+            //    {
+            //        string rightFormat = converter.SetStringRightFormat(checkpoint.CPDateTime);
+            //        DateTime dateTime = DateTime.ParseExact(rightFormat, "MM-dd-yyyy", CultureInfo.InvariantCulture);
+            //        DateTime checkpointDate = dateTime;
+
+            //        if (args.Item.Date.Date.Equals(checkpointDate))
+            //        {
+            //            args.Item.Background = greenBackground;
+            //            args.Item.BorderThickness = new Thickness(1);
+            //            args.Item.PointerPressed += OpenPopupRouteList;                        
+            //        }
+            //        args.RegisterUpdateCallback(CalendarViewPreviousRouteInfo);
+            //    }                
+            //}
+            args.Item.PointerPressed += UpdateCalendarView;
+        }
+
+        private void OpenPopupRouteList(object sender, PointerRoutedEventArgs e)
+        {
+            List<CheckpointsClient> tempCheckpointsList = new List<CheckpointsClient>();
+
+            if (!PopupRouteInfo.IsOpen)
+            {
+                PopupRouteInfo.IsOpen = true;
+            }
+
+            foreach (var checkpoint in checkpointsList)
+            {
+                string rightFormat = converter.SetStringRightFormat(checkpoint.CPDateTime);
+                DateTime dateTime = DateTime.ParseExact(rightFormat, "MM-dd-yyyy", CultureInfo.InvariantCulture);
+                DateTime checkpointDate = dateTime;
+
+                if ((sender as CalendarViewDayItem).Date.Date.Equals(checkpointDate))
+                {
+                    tempCheckpointsList.Add(checkpoint);
+                }
+            }
+
+            RouteListView.Items.Add(new RouteClient()
+            {
+                RouteID = 1,
+                Route = tempCheckpointsList
+            });
+
+            RouteListView.ItemClick += ShowWayPointsAsync;
+        }
+
+        private void ClosePopupRouteInfo(object sender, RoutedEventArgs e)
+        {
+            if (PopupRouteInfo.IsOpen)
+            {
+                PopupRouteInfo.IsOpen = false;
             }
         }
     }
