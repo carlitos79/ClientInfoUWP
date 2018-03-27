@@ -35,10 +35,10 @@ namespace InfoClientUWP.Helpers
                 Math.Cos(this.ToRadian(pos1.Latitude)) * Math.Cos(this.ToRadian(pos2.Latitude)) *
                 Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
             double c = 2 * Math.Asin(Math.Min(1, Math.Sqrt(a)));
-            double d = (R * c) / 1000;
+            double d = (R * c) * 1000;
 
-            return d / ((cp1.CPDateTime.Second + cp1.CPDateTime.Minute * 60 + cp1.CPDateTime.Hour * 3600) -
-                (cp2.CPDateTime.Second + cp2.CPDateTime.Minute * 60 + cp2.CPDateTime.Hour * 3600));
+            return d / Math.Abs(((cp1.CPDateTime.Second + cp1.CPDateTime.Minute * 60 + cp1.CPDateTime.Hour * 3600) -
+                (cp2.CPDateTime.Second + cp2.CPDateTime.Minute * 60 + cp2.CPDateTime.Hour * 3600)));
         }
 
         private double ToRadian(double val)
