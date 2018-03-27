@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
@@ -176,28 +177,26 @@ namespace InfoClientUWP
                 Route = route.Route
             };
 
-            for(int i = 0; i < newRoute.Route.Count - 1; ++i)
+            for(int i = 0; i < newRoute.Route.Count - 1; i++)
             {
                 var cp1 = newRoute.Route[i];
                 var cp2 = newRoute.Route[i + 1];
-               point = new BasicGeoposition() {
+
+                point = new BasicGeoposition() {
                     Latitude = converter.FromStringToDouble(cp1.Latitude),
                     Longitude = converter.FromStringToDouble(cp1.Longitude)
                 };
-                AddMarker(point, timeUtility.GetDate(cp1.CPDateTime) + "\n" + "speed: " + Math.Abs(timeUtility.ComputeSpeed(cp1, cp2)).ToString());
+
+                string speedString = Math.Abs(timeUtility.ComputeSpeed(cp1, cp2)).ToString();
+                string speed = speedString.Substring(0, 6);
+
+                AddMarker(point, "Date: " + timeUtility.GetDate(cp1.CPDateTime) + "\n" + "Speed: " + speed + " m/s");
                 path2.Add(new Geopoint(point));
             }
             var last = newRoute.Route[newRoute.Route.Count - 1];
             point = new BasicGeoposition() { Latitude = converter.FromStringToDouble(last.Latitude), Longitude = converter.FromStringToDouble(last.Longitude) };
-            AddMarker(point, timeUtility.GetDate(last.CPDateTime) + "\n" + "speed: 0 m/s");
-            path2.Add(new Geopoint(point));
-
-            //foreach (var checkpoint in newRoute.Route)
-            //{
-            //    point = new BasicGeoposition() { Latitude = converter.FromStringToDouble(checkpoint.Latitude), Longitude = converter.FromStringToDouble(checkpoint.Longitude) };
-            //    AddMarker(point, timeUtility.GetDate(checkpoint.CPDateTime) + "\n" + "speed: 0.016 m/s");
-            //    path2.Add(new Geopoint(point));
-            //}  
+            AddMarker(point, "Date: " + timeUtility.GetDate(last.CPDateTime) + "\n" + "Speed: 0 m/s");
+            path2.Add(new Geopoint(point));            
 
             MapRouteFinderResult routeResult = await MapRouteFinder.GetWalkingRouteFromWaypointsAsync(path2);
 
@@ -321,24 +320,7 @@ namespace InfoClientUWP
             {
                 args.RegisterUpdateCallback(CalendarViewPreviousRouteInfo);
             }
-
-            //else if (args.Phase > 0)
-            //{
-            //    foreach (var checkpoint in checkpointsList)
-            //    {
-            //        string rightFormat = converter.SetStringRightFormat(checkpoint.CPDateTime);
-            //        DateTime dateTime = DateTime.ParseExact(rightFormat, "MM-dd-yyyy", CultureInfo.InvariantCulture);
-            //        DateTime checkpointDate = dateTime;
-
-            //        if (args.Item.Date.Date.Equals(checkpointDate))
-            //        {
-            //            args.Item.Background = greenBackground;
-            //            args.Item.BorderThickness = new Thickness(1);
-            //            args.Item.PointerPressed += OpenPopupRouteList;                        
-            //        }
-            //        args.RegisterUpdateCallback(CalendarViewPreviousRouteInfo);
-            //    }                
-            //}
+            
             args.Item.PointerPressed += UpdateCalendarView;
         }
 
