@@ -383,9 +383,16 @@ namespace InfoClientUWP
                 RouteListView.Items.Add(r);
             }
 
-            int t = RouteListView.Items.Count() - 1;
+            int routeIdListLength = routeIdList.Count();
 
-            for (int i = 0; i < t; i++)
+            if (routeIdListLength >= 2)
+            {
+                RouteListView.Items.RemoveAt(0);
+            }
+
+            int ListViewLength = RouteListView.Items.Count() - routeIdListLength;
+
+            for (int i = 0; i < ListViewLength; i++)
             {
                 RouteListView.Items.RemoveAt(i);
             }

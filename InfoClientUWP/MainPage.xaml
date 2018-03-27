@@ -38,13 +38,14 @@
         
         <TextBlock x:Name="InfoTextBlock" FontSize="15" Margin="20,310,0,0"/>
         
-        <Popup VerticalOffset="-200" HorizontalOffset="150" x:Name="PopupRouteInfo" VerticalAlignment="Center">
+        <Popup VerticalOffset="-150" HorizontalOffset="200" x:Name="PopupRouteInfo" VerticalAlignment="Center">
             <Border BorderBrush="{StaticResource ApplicationForegroundThemeBrush}" 
                 Background="LightGray"
-                BorderThickness="2" Width="500" Height="500">
+                BorderThickness="2" Width="400" Height="300">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="Route(s) for that date" FontSize="25" VerticalAlignment="Top"/>
-
+                    <TextBlock Text="" FontSize="25" VerticalAlignment="Top"/>
+                    
                     <ListView x:Name="RouteListView" IsItemClickEnabled="True">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:RouteClient">
@@ -61,7 +62,7 @@
                     </ListView>
 
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Close" Click="ClosePopupRouteInfo" HorizontalAlignment="Left" Margin="80,90,5,5"/>
+                        <Button Content="Close" Click="ClosePopupRouteInfo" HorizontalAlignment="Left" Margin="80,50,5,5"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
