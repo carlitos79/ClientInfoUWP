@@ -4,6 +4,7 @@ using InfoClientUWP.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
@@ -189,6 +190,7 @@ namespace InfoClientUWP
                 if (PopupRouteInfo.IsOpen)
                 {
                     PopupRouteInfo.IsOpen = false;
+                    RouteListView.Items.Clear();
                 }
 
                 MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
@@ -327,6 +329,9 @@ namespace InfoClientUWP
         private void OpenPopupRouteList(object sender, PointerRoutedEventArgs e)
         {
             List<CheckpointsClient> tempCheckpointsList = new List<CheckpointsClient>();
+            List<string> routeIdList = new List<string>();
+            List<RouteClient> routes = new List<RouteClient>();
+            List<CheckpointsClient> routeCheckpoints = null;
 
             if (!PopupRouteInfo.IsOpen)
             {
@@ -341,15 +346,49 @@ namespace InfoClientUWP
 
                 if ((sender as CalendarViewDayItem).Date.Date.Equals(checkpointDate))
                 {
-                    tempCheckpointsList.Add(checkpoint);
+                    tempCheckpointsList.Add(checkpoint);               
+                }                
+            }
+
+            foreach (var checkpoint in tempCheckpointsList)
+            {
+                if (!routeIdList.Contains(checkpoint.RouteID))
+                {
+                    routeIdList.Add(checkpoint.RouteID);
                 }
             }
 
-            RouteListView.Items.Add(new RouteClient()
+            for (int i = 0; i < tempCheckpointsList.Count; i++)
             {
-                RouteID = 1,
-                Route = tempCheckpointsList
-            });
+                routeCheckpoints = (from c in tempCheckpointsList where c.RouteID == routeIdList.ElementAtOrDefault(i) select c).ToList();
+
+                if (routeCheckpoints != null)
+                {
+                    routes.Add(new RouteClient
+                    {
+                        RouteID = "Route " + (i + 1).ToString(),
+                        Route = routeCheckpoints
+                    });
+                }
+            }
+
+            var route = (from r in routes
+                        from c in r.Route
+                        from rId in routeIdList
+                        where c.RouteID == rId
+                        select r).ToList();
+
+            foreach (var r in route.Distinct())
+            {
+                RouteListView.Items.Add(r);
+            }
+
+            int t = RouteListView.Items.Count() - 1;
+
+            for (int i = 0; i < t; i++)
+            {
+                RouteListView.Items.RemoveAt(i);
+            }
 
             RouteListView.ItemClick += ShowWayPointsAsync;
         }
