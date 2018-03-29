@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
@@ -30,6 +31,7 @@ namespace InfoClientUWP
         {
             this.InitializeComponent();
             GetCheckpoints();
+            CheckIfBeenHereBefore();
         }
 
         private ThreadPoolTimer timer = null;
@@ -39,6 +41,7 @@ namespace InfoClientUWP
         private List<Geopoint> path = new List<Geopoint>();
         private List<CheckpointsClient> checkpointsList = new List<CheckpointsClient>();
         private CalendarViewDayItem date;
+        private Geopoint myLocation;
 
         private async void ShowPath()
         {
@@ -159,6 +162,38 @@ namespace InfoClientUWP
             };
 
             MapControl1.MapElements.Add(pin);
+        }
+
+        private async Task<Geopoint> GetThisLocationAsync()
+        {
+            var accesStatus = await Geolocator.RequestAccessAsync();
+            Geopoint thisLocation;
+
+            if (accesStatus == GeolocationAccessStatus.Allowed)
+            {
+                Geolocator geolocator = new Geolocator();
+                Geoposition position = await geolocator.GetGeopositionAsync();
+                thisLocation = position.Coordinate.Point;
+
+                return thisLocation;
+            }
+            else if (accesStatus == GeolocationAccessStatus.Denied || accesStatus == GeolocationAccessStatus.Unspecified)
+            {
+                return null; 
+            }
+
+            return null;
+        }
+
+        private void CheckIfBeenHereBefore()
+        {
+            foreach (var checkpoint in checkpointsList)
+            {
+                if (myLocation.Position.Equals(checkpoint))
+                {
+                    InfoTextBlock.Text = "You have been here before";
+                }
+            }
         }
 
         private async void ShowWayPointsAsync(object sender, ItemClickEventArgs e)
@@ -284,6 +319,7 @@ namespace InfoClientUWP
                     checkpointsList.Add(checkpoint);
                 }
             }
+            myLocation = await GetThisLocationAsync();
         }
 
         private void UpdateCalendarView(object sender, PointerRoutedEventArgs e)
