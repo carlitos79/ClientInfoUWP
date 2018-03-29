@@ -32,8 +32,10 @@ namespace InfoClientUWP
             this.InitializeComponent();
             GetCheckpoints();
             CheckIfBeenHereBefore();
+            backgroundTimer = ThreadPoolTimer.CreatePeriodicTimer(OnBackgroundEvent, TimeSpan.FromSeconds(1));
         }
 
+        private ThreadPoolTimer backgroundTimer;
         private ThreadPoolTimer timer = null;
         private Guid routeId = Guid.NewGuid();
         private TimeUtils timeUtility = new TimeUtils();
@@ -111,6 +113,11 @@ namespace InfoClientUWP
                 case GeolocationAccessStatus.Unspecified:
                     break;
             }
+        }
+
+        private void OnBackgroundEvent(ThreadPoolTimer timer)
+        {
+            CheckIfBeenHereBefore();
         }
 
         private async void OnTimedEvent(ThreadPoolTimer timer)
