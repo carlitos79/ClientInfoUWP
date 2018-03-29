@@ -32,6 +32,8 @@ namespace InfoClientUWP
             this.InitializeComponent();
             GetCheckpoints();
             CheckIfBeenHereBefore();
+
+            // Create timer to call OnBackgroundEvent every 1 sec.
             backgroundTimer = ThreadPoolTimer.CreatePeriodicTimer(OnBackgroundEvent, TimeSpan.FromSeconds(1));
         }
 
@@ -115,13 +117,19 @@ namespace InfoClientUWP
             }
         }
 
-        private void OnBackgroundEvent(ThreadPoolTimer timer)
+        // Timer method to be called every 1 sec.
+        private async void OnBackgroundEvent(ThreadPoolTimer timer)
         {
-            CheckIfBeenHereBefore();
+            // Call CheckIfBeenHereBefore() from the UI thread.
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
+                CheckIfBeenHereBefore();
+            }); 
         }
 
+        // Timer method to be called every 15 sec.
         private async void OnTimedEvent(ThreadPoolTimer timer)
         {
+            // Call UpdatePosition from the UI thread.
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
                 UpdatePosition();
             }); 
@@ -132,12 +140,14 @@ namespace InfoClientUWP
             if (timer == null)
             {
                 LiveButton.Content = "Stop Tracking";
+                // Create timer to call OnTimedEvent every 15 sec.
                 timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(15));
                 System.Diagnostics.Debug.WriteLine("starting timer");
             }
             else
             {
                 LiveButton.Content = "Start Tracking";
+                // Stop the timer.
                 timer.Cancel();
                 timer = null;
                 System.Diagnostics.Debug.WriteLine("stopping timer");
