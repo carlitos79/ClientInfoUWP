@@ -30,7 +30,8 @@
             MapServiceToken="1RlRSrgMGBzsDVkkxXv5~oKwIyEm1kdA2yi_Dg-yRLg~AsG9Rug_1PMvO5YvxMp5tGUgUBOe8n2u9r_A4GwmmnpTTwrhW0Dzj_rr00xrLCCr"/>
 
         <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">            
-            <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="-60,0,20,0"/>
+            <Button Content="Show User's Position" Click="ShowThisLocationAsync" HorizontalAlignment="Right" Margin="-50,0,20,0"/>
+            <Button x:Name="PreviousRouteButton" Content="Prev. Routes Search On" Click="PreviousRoutesActivation" HorizontalAlignment="Right" Margin="-10,0,20,0"/>
             <Button x:Name="LiveButton" Content="Start Tracking" Click="ShowLiveRoute" HorizontalAlignment="Right" Margin="0,0,20,0"/>
         </StackPanel>
         
@@ -67,5 +68,36 @@
                 </StackPanel>
             </Border>
         </Popup>
+
+        <Popup VerticalOffset="-150" HorizontalOffset="200" x:Name="PopupBeenHereInfo" VerticalAlignment="Center">
+            <Border BorderBrush="{StaticResource ApplicationForegroundThemeBrush}" 
+                Background="LightGray"
+                BorderThickness="2" Width="400" Height="300">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="You've been here before" FontSize="25" VerticalAlignment="Top"/>
+                    <TextBlock Text="" FontSize="25" VerticalAlignment="Top"/>
+
+                    <ListView x:Name="BeenHereListView" IsItemClickEnabled="True">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:RouteClient">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="47"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Source="Assets/marker.png" Width="32" Height="32" HorizontalAlignment="Left"/>
+                                    <TextBlock Text="{x:Bind RouteID}" Foreground="Teal" FontSize="15" Grid.Column="1"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Close" Click="ClosePopupBeenHereInfo" HorizontalAlignment="Left" Margin="95,50,5,5"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
+        
     </Grid>
 </Page>

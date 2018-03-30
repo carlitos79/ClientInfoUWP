@@ -96,6 +96,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helpers\Converters.cs" />
+    <Compile Include="Helpers\LocationHelpers.cs" />
     <Compile Include="Helpers\TimeUtils.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

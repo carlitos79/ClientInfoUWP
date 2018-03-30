@@ -5,14 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
 using Windows.System.Threading;
 using Windows.UI;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Automation.Peers;
+using Windows.UI.Xaml.Automation.Provider;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Maps;
 using Windows.UI.Xaml.Input;
@@ -31,16 +31,14 @@ namespace InfoClientUWP
         {
             this.InitializeComponent();
             GetCheckpoints();
-            CheckIfBeenHereBefore();
-
-            // Create timer to call OnBackgroundEvent every 1 sec.
-            backgroundTimer = ThreadPoolTimer.CreatePeriodicTimer(OnBackgroundEvent, TimeSpan.FromSeconds(1));
+            GetThisLocationAsync();
         }
 
-        private ThreadPoolTimer backgroundTimer;
+        private ThreadPoolTimer backgroundTimer = null;
         private ThreadPoolTimer timer = null;
         private Guid routeId = Guid.NewGuid();
         private TimeUtils timeUtility = new TimeUtils();
+        private LocationHelpers locationHelper = new LocationHelpers();
         private Converters converter = new Converters();
         private List<Geopoint> path = new List<Geopoint>();
         private List<CheckpointsClient> checkpointsList = new List<CheckpointsClient>();
@@ -118,10 +116,10 @@ namespace InfoClientUWP
         }
 
         // Timer method to be called every 1 sec.
-        private async void OnBackgroundEvent(ThreadPoolTimer timer)
+        private async void OnBackgroundEvent(ThreadPoolTimer backgroundTimer)
         {
             // Call CheckIfBeenHereBefore() from the UI thread.
-            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {                
                 CheckIfBeenHereBefore();
             }); 
         }
@@ -154,6 +152,21 @@ namespace InfoClientUWP
             }
         }
 
+        private void PreviousRoutesActivation(object sender, RoutedEventArgs e)
+        {
+            if (backgroundTimer == null)
+            {
+                PreviousRouteButton.Content = "Prev. Routes Search Off";
+                backgroundTimer = ThreadPoolTimer.CreatePeriodicTimer(OnBackgroundEvent, TimeSpan.FromSeconds(5));
+            }
+            else
+            {
+                PreviousRouteButton.Content = "Prev. Routes Search On";
+                backgroundTimer.Cancel();
+                backgroundTimer = null;
+            }
+        }
+
         public void AddMarker(BasicGeoposition pos, string text)
         {
             Geopoint geoForPos = new Geopoint(pos);
@@ -181,37 +194,26 @@ namespace InfoClientUWP
             MapControl1.MapElements.Add(pin);
         }
 
-        private async Task<Geopoint> GetThisLocationAsync()
+        private async void GetThisLocationAsync()
         {
             var accesStatus = await Geolocator.RequestAccessAsync();
-            Geopoint thisLocation;
 
-            if (accesStatus == GeolocationAccessStatus.Allowed)
+            switch (accesStatus)
             {
-                Geolocator geolocator = new Geolocator();
-                Geoposition position = await geolocator.GetGeopositionAsync();
-                thisLocation = position.Coordinate.Point;
+                case GeolocationAccessStatus.Allowed:
 
-                return thisLocation;
-            }
-            else if (accesStatus == GeolocationAccessStatus.Denied || accesStatus == GeolocationAccessStatus.Unspecified)
-            {
-                return null; 
-            }
+                    Geolocator geolocator = new Geolocator();
+                    Geoposition position = await geolocator.GetGeopositionAsync();
+                    myLocation = position.Coordinate.Point;
+                    break;
 
-            return null;
-        }
+                case GeolocationAccessStatus.Denied:
+                    break;
 
-        private void CheckIfBeenHereBefore()
-        {
-            foreach (var checkpoint in checkpointsList)
-            {
-                if (myLocation.Position.Equals(checkpoint))
-                {
-                    InfoTextBlock.Text = "You have been here before";
-                }
+                case GeolocationAccessStatus.Unspecified:
+                    break;
             }
-        }
+        }       
 
         private async void ShowWayPointsAsync(object sender, ItemClickEventArgs e)
         {
@@ -221,6 +223,7 @@ namespace InfoClientUWP
             locator.DesiredAccuracyInMeters = 1;
 
             BasicGeoposition point;
+
             var path2 = new List<Geopoint>();
 
             var newRoute = new RouteClient()
@@ -259,6 +262,15 @@ namespace InfoClientUWP
                     PopupRouteInfo.IsOpen = false;
                     RouteListView.Items.Clear();
                 }
+
+                if (PopupBeenHereInfo.IsOpen)
+                {
+                    PopupBeenHereInfo.IsOpen = false;
+                    BeenHereListView.Items.Clear();
+                    ButtonAutomationPeer peer = new ButtonAutomationPeer(PreviousRouteButton);
+                    IInvokeProvider invokeProv = peer.GetPattern(PatternInterface.Invoke) as IInvokeProvider;
+                    invokeProv.Invoke();
+                }                
 
                 MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
                 viewOfRoute.RouteColor = Colors.Yellow;
@@ -326,17 +338,11 @@ namespace InfoClientUWP
 
             foreach (var checkpoint in checkpoints)
             {
-                tempCheckpointsList.Add(checkpoint);
-            }
-
-            foreach (var checkpoint in tempCheckpointsList)
-            {
                 if (!checkpointsList.Contains(checkpoint))
                 {
                     checkpointsList.Add(checkpoint);
                 }
-            }
-            myLocation = await GetThisLocationAsync();
+            }         
         }
 
         private void UpdateCalendarView(object sender, PointerRoutedEventArgs e)
@@ -362,8 +368,7 @@ namespace InfoClientUWP
 
         private void CalendarViewPreviousRouteInfo(CalendarView sender, CalendarViewDayItemChangingEventArgs args)
         {
-            InfoTextBlock.Text = "Dates highlighted in green represent" + "\n" + "previous routes." + "\n" +
-                                 "Press on the highlighted date to see" + "\n" + "the route(s) for that date.";
+            converter.DisplayCalendarRouteInfo(InfoTextBlock);
 
             date = args.Item;
 
@@ -377,17 +382,69 @@ namespace InfoClientUWP
             args.Item.PointerPressed += UpdateCalendarView;
         }
 
+        private void CheckIfBeenHereBefore()
+        {
+            List<CheckpointsClient> tempCheckpointsList = new List<CheckpointsClient>();
+            List<string> routeIdList = new List<string>();
+            List<RouteClient> routes = new List<RouteClient>();
+            List<RouteClient> previousRoutes;
+            List<CheckpointsClient> routeCheckpoints = null;
+
+            string checkpointId = "";
+
+            foreach (var checkpoint in checkpointsList)
+            {
+                if (myLocation == null)
+                {
+                    InfoTextBlock.Text = "Getting this Location...";
+                    break;
+                }
+                else
+                {
+                    if (checkpoint.Latitude.Equals(converter.FromDoubleToString(myLocation.Position.Latitude)))
+                    {
+                        if (!PopupBeenHereInfo.IsOpen)
+                        {
+                            PopupBeenHereInfo.IsOpen = true;
+                        }
+
+                        checkpointId = checkpoint.RouteID;
+                    }
+                    else
+                    {
+                        converter.DisplayCalendarRouteInfo(InfoTextBlock);
+                    }
+                }
+            }
+
+            foreach (var checkpoint in checkpointsList)
+            {
+                if (checkpointId.Equals(checkpoint.RouteID))
+                {
+                    if (!tempCheckpointsList.Contains(checkpoint))
+                    {
+                        tempCheckpointsList.Add(checkpoint);
+                    }
+                }
+            }
+
+            locationHelper.GetRouteId(tempCheckpointsList, routeIdList);
+            locationHelper.CreateRoute(tempCheckpointsList, routeCheckpoints, routes, routeIdList);
+            previousRoutes = locationHelper.GetPreviousRoutes(routes, routeIdList);
+            locationHelper.DisplayRoutesInListView(BeenHereListView, previousRoutes, routeIdList);            
+
+            BeenHereListView.ItemClick += ShowWayPointsAsync;
+        }
+
         private void OpenPopupRouteList(object sender, PointerRoutedEventArgs e)
         {
             List<CheckpointsClient> tempCheckpointsList = new List<CheckpointsClient>();
             List<string> routeIdList = new List<string>();
             List<RouteClient> routes = new List<RouteClient>();
+            List<RouteClient> previousRoutes;
             List<CheckpointsClient> routeCheckpoints = null;
 
-            if (!PopupRouteInfo.IsOpen)
-            {
-                PopupRouteInfo.IsOpen = true;
-            }
+            OpenPopupRouteInfo(sender, e);
 
             foreach (var checkpoint in checkpointsList)
             {
@@ -401,52 +458,10 @@ namespace InfoClientUWP
                 }                
             }
 
-            foreach (var checkpoint in tempCheckpointsList)
-            {
-                if (!routeIdList.Contains(checkpoint.RouteID))
-                {
-                    routeIdList.Add(checkpoint.RouteID);
-                }
-            }
-
-            for (int i = 0; i < tempCheckpointsList.Count; i++)
-            {
-                routeCheckpoints = (from c in tempCheckpointsList where c.RouteID == routeIdList.ElementAtOrDefault(i) select c).ToList();
-
-                if (routeCheckpoints != null)
-                {
-                    routes.Add(new RouteClient
-                    {
-                        RouteID = "Route " + (i + 1).ToString(),
-                        Route = routeCheckpoints
-                    });
-                }
-            }
-
-            var route = (from r in routes
-                        from c in r.Route
-                        from rId in routeIdList
-                        where c.RouteID == rId
-                        select r).ToList();
-
-            foreach (var r in route.Distinct())
-            {
-                RouteListView.Items.Add(r);
-            }
-
-            int routeIdListLength = routeIdList.Count();
-
-            if (routeIdListLength >= 2)
-            {
-                RouteListView.Items.RemoveAt(0);
-            }
-
-            int ListViewLength = RouteListView.Items.Count() - routeIdListLength;
-
-            for (int i = 0; i < ListViewLength; i++)
-            {
-                RouteListView.Items.RemoveAt(i);
-            }
+            locationHelper.GetRouteId(tempCheckpointsList, routeIdList);
+            locationHelper.CreateRoute(tempCheckpointsList, routeCheckpoints, routes, routeIdList);
+            previousRoutes = locationHelper.GetPreviousRoutes(routes, routeIdList);
+            locationHelper.DisplayRoutesInListView(RouteListView, previousRoutes, routeIdList);
 
             RouteListView.ItemClick += ShowWayPointsAsync;
         }
@@ -456,6 +471,30 @@ namespace InfoClientUWP
             if (PopupRouteInfo.IsOpen)
             {
                 PopupRouteInfo.IsOpen = false;
+            }
+        }
+
+        private void OpenPopupRouteInfo(object sender, RoutedEventArgs e)
+        {
+            if (!PopupRouteInfo.IsOpen)
+            {
+                PopupRouteInfo.IsOpen = true;
+            }
+        }
+
+        private void ClosePopupBeenHereInfo(object sender, RoutedEventArgs e)
+        {
+            if (PopupBeenHereInfo.IsOpen)
+            {
+                PopupBeenHereInfo.IsOpen = false;
+            }
+        }
+
+        private void OpenPopupBeenHereInfo(object sender, RoutedEventArgs e)
+        {
+            if (!PopupBeenHereInfo.IsOpen)
+            {
+                PopupBeenHereInfo.IsOpen = true;
             }
         }
     }

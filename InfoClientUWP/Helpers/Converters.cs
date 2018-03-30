@@ -1,4 +1,5 @@
 ﻿using System;
+using Windows.UI.Xaml.Controls;
 
 namespace InfoClientUWP.Helpers
 {
@@ -31,6 +32,12 @@ namespace InfoClientUWP.Helpers
             }
 
             return month + "-" + day + "-" + year;
+        }
+
+        public void DisplayCalendarRouteInfo(TextBlock textBlock)
+        {
+            textBlock.Text = "Dates highlighted in green represent" + "\n" + "previous routes." + "\n" +
+                             "Press on the highlighted date to see" + "\n" + "the route(s) for that date.";
         }
     }
 }
