@@ -145,7 +145,12 @@
       <Version>2.5.0.280555</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\CppProj\CppProj.vcxproj">
+      <Project>{cbd7d081-f8f1-4eb8-9acb-3636bbf7890d}</Project>
+      <Name>CppProj</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

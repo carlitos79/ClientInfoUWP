@@ -9,19 +9,11 @@ namespace RouteBackgroundTask
         public async void Run(IBackgroundTaskInstance taskInstance)
         {
             //
-            // TODO: Insert code to start one or more asynchronous methods using the
-            //       await keyword, for example:
-            //
-            // await ExampleMethodAsync();
+            // await CheckIfBeenHereBefore();
             //
 
             _deferral.Complete();
         }
-
-        //var builder = new BackgroundTaskBuilder();
-        //builder.Name = exampleTaskName;
-        //builder.TaskEntryPoint = "RuntimeComponent1.ExampleBackgroundTask";
-        //builder.SetTrigger(new SystemTrigger(SystemTriggerType.TimeZoneChange, false));
 
         public static BackgroundTaskRegistration RegisterBackgroundTask(string taskEntryPoint, string taskName, IBackgroundTrigger trigger, IBackgroundCondition condition)
         {
@@ -38,6 +30,7 @@ namespace RouteBackgroundTask
             builder.Name = taskName;
             builder.TaskEntryPoint = taskEntryPoint;
             builder.SetTrigger(trigger);
+            builder.AddCondition(new SystemCondition(SystemConditionType.UserPresent));
 
             if (condition != null)
             {

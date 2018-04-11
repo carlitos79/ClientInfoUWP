@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfoClientUWP", "InfoClient
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteBackgroundTask", "RouteBackgroundTask\RouteBackgroundTask.csproj", "{829AAE55-84FB-4520-8E78-98F67E9B431E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CppProj", "CppProj\CppProj.vcxproj", "{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -53,6 +55,18 @@ Global
 		{829AAE55-84FB-4520-8E78-98F67E9B431E}.Release|x86.ActiveCfg = Release|x86
 		{829AAE55-84FB-4520-8E78-98F67E9B431E}.Release|x86.Build.0 = Release|x86
 		{829AAE55-84FB-4520-8E78-98F67E9B431E}.Release|x86.Deploy.0 = Release|x86
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|ARM.ActiveCfg = Debug|ARM
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|ARM.Build.0 = Debug|ARM
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|x64.ActiveCfg = Debug|x64
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|x64.Build.0 = Debug|x64
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|x86.ActiveCfg = Debug|Win32
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Debug|x86.Build.0 = Debug|Win32
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|ARM.ActiveCfg = Release|ARM
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|ARM.Build.0 = Release|ARM
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|x64.ActiveCfg = Release|x64
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|x64.Build.0 = Release|x64
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|x86.ActiveCfg = Release|Win32
+		{CBD7D081-F8F1-4EB8-9ACB-3636BBF7890D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

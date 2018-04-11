@@ -132,12 +132,6 @@
       <Version>6.0.6</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\InfoClientUWP\InfoClientUWP.csproj">
-      <Project>{df9e12ef-407f-45c3-a5f0-11063d0e831e}</Project>
-      <Name>InfoClientUWP</Name>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

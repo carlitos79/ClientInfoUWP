@@ -1,11 +1,7 @@
 ﻿using InfoClientUWP.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
 
 namespace InfoClientUWP.Helpers
 {
@@ -22,18 +18,18 @@ namespace InfoClientUWP.Helpers
             }
         }
 
-        public void CreateRoute(List<CheckpointsClient> tempCheckpointsList, List<CheckpointsClient> routeCheckpoints, List<RouteClient> routes, List<string> routeIdList)
+        public void CreateRoute(List<CheckpointsClient> checkpointsList, List<CheckpointsClient> route, List<RouteClient> routes, List<string> routeIdList)
         {
-            for (int i = 0; i < tempCheckpointsList.Count; i++)
+            for (int i = 0; i < checkpointsList.Count; i++)
             {
-                routeCheckpoints = (from c in tempCheckpointsList where c.RouteID == routeIdList.ElementAtOrDefault(i) select c).ToList();
+                route = (from c in checkpointsList where c.RouteID == routeIdList.ElementAtOrDefault(i) select c).ToList();
 
-                if (routeCheckpoints != null)
+                if (route != null)
                 {
                     routes.Add(new RouteClient
                     {
                         RouteID = "Route " + (i + 1).ToString(),
-                        Route = routeCheckpoints
+                        Route = route
                     });
                 }
             }

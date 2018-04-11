@@ -4,7 +4,7 @@ using InfoClientUWP.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
+using System.Threading.Tasks;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Services.Maps;
@@ -18,13 +18,8 @@ using Windows.UI.Xaml.Controls.Maps;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 namespace InfoClientUWP
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainPage : Page
     {
         public MainPage()
@@ -45,14 +40,23 @@ namespace InfoClientUWP
         private CalendarViewDayItem date;
         private Geopoint myLocation;
 
+        //Here we get the user's position using C++
+        //private async Task GetUserPositionCPlusPlus()
+        //{
+        //    var cPlusPlusClassInstance = new CppProj.Class1();
+        //    var position = await cPlusPlusClassInstance.ReturnPosition();
+
+        //    var x = position.Coordinate;
+        //    var speed = position.Coordinate.Speed;
+        //}
+
         private async void ShowPath()
         {
             if (path.Count >= 2)
             {
                 foreach (var geoPoint in path)
                 {
-                    AddMarkerUserPos(geoPoint, timeUtility.GetTime(DateTime.Now));
-                }
+                    AddMarkerUserPos(geoPoint, timeUtility.GetTime(DateTime.Now));                }
 
                 MapRouteFinderResult routeResult = await MapRouteFinder.GetWalkingRouteFromWaypointsAsync(path);
 
@@ -60,10 +64,10 @@ namespace InfoClientUWP
                 {
                     MapRouteView viewOfRoute = new MapRouteView(routeResult.Route);
                     viewOfRoute.RouteColor = Colors.Yellow;
-                    viewOfRoute.OutlineColor = Colors.Black;                    
+                    viewOfRoute.OutlineColor = Colors.Black;
 
                     MapControl1.Routes.Add(viewOfRoute);
-                    MapControl1.ZoomLevel = 7;
+                    MapControl1.ZoomLevel = 17;
 
                     await MapControl1.TrySetViewBoundsAsync(
                           routeResult.Route.BoundingBox,
@@ -115,19 +119,15 @@ namespace InfoClientUWP
             }
         }
 
-        // Timer method to be called every 1 sec.
         private async void OnBackgroundEvent(ThreadPoolTimer backgroundTimer)
         {
-            // Call CheckIfBeenHereBefore() from the UI thread.
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {                
                 CheckIfBeenHereBefore();
             }); 
         }
 
-        // Timer method to be called every 15 sec.
         private async void OnTimedEvent(ThreadPoolTimer timer)
         {
-            // Call UpdatePosition from the UI thread.
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => {
                 UpdatePosition();
             }); 
@@ -138,14 +138,12 @@ namespace InfoClientUWP
             if (timer == null)
             {
                 LiveButton.Content = "Stop Tracking";
-                // Create timer to call OnTimedEvent every 15 sec.
-                timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(15));
+                timer = ThreadPoolTimer.CreatePeriodicTimer(OnTimedEvent, TimeSpan.FromSeconds(5));
                 System.Diagnostics.Debug.WriteLine("starting timer");
             }
             else
             {
                 LiveButton.Content = "Start Tracking";
-                // Stop the timer.
                 timer.Cancel();
                 timer = null;
                 System.Diagnostics.Debug.WriteLine("stopping timer");
@@ -293,14 +291,24 @@ namespace InfoClientUWP
             {
                 case GeolocationAccessStatus.Allowed:
 
-                    Geolocator geolocator = new Geolocator();
-                    Geoposition position = await geolocator.GetGeopositionAsync();
+                    //Here we get the user's position using C++
+                    var cPlusPlusClass = new CppProj.Class1();
+                    var position = await cPlusPlusClass.ReturnPosition();
+
                     Geopoint thisLocation = position.Coordinate.Point;
 
                     double lat = thisLocation.Position.Latitude;
                     double lon = thisLocation.Position.Longitude;
+                    double speed = (double)position.Coordinate.Speed;
 
-                    AddMarkerUserPos(thisLocation, lat.ToString() + " " + lon.ToString());
+                    if (double.IsNaN(speed))
+                    {
+                        speed = 0.0;
+                    }
+
+                    AddMarkerUserPos(thisLocation, "Lat: " + lat.ToString() + 
+                                                   "\n" + " Long: " + lon.ToString() + 
+                                                   "\n" + "Speed: " + speed.ToString());
 
                     MapControl1.Center = thisLocation;
                     MapControl1.ZoomLevel = 17;
